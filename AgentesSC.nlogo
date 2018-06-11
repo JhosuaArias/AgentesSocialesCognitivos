@@ -1,6 +1,6 @@
-
 globals
 [
+  volumen
 ]
 
 ;; Declarando los diferentes tipos de agentes que existen
@@ -53,42 +53,63 @@ to setup
 end
 
 to go
-  iteracion-oferente
-  iteracion-demandante
+
+  ifelse esMercadoAbierto [
+    iteracion-oferente-mercado-abierto
+    iteracion-demandante-mercado-abierto
+  ]
+  [
+    iteracion-oferente-mercado-cerrado
+    iteracion-demandante-mercado-cerrado
+  ]
+
   iteracion-intermediario
   tick
 end
 
 ;; Definiendo los agentes con sus respectivas variables
 to set-agentes
-  set-intermediarios
   set-oferente
   set-demandante
+  set-intermediarios
   set-pizarra
 end
 
 to set-intermediarios
   create-intermediarios cantidad-intermediarios
+
+  let haber-maximo 0
+
+  ask oferentes [set haber-maximo haber]
+
   ask intermediarios [
     set id who
     set estado 0
-    set haber random haber-maximo * 10000000
+    ;; Los intermediarios tendrán un número aleatorio entre 0 y el porcentaje del haber maximo del oferente
+    set haber random (int haber-maximo * (haber-maximo-intermediarios / 100.0) )
+    print (word "Intermediario " who ": " haber " CRC")
     set ofertas []
     set demandas []
     set conocidos []
   ]
 end
+
+;; TODO esto hay que cambiarlo
 to set-oferente
   create-oferentes 1 ;; Un solo oferente
   ask oferentes [
-    set haber random haber-maximo * 10000000
+    set haber random haber-maximo-oferentes-demandantes * 1000000
+    print (word "Oferente " who ": " haber " CRC")
     set ofertas []
   ]
 end
+
+;; TODO esto hay que cambiarlo
 to set-demandante
   create-demandantes 1 ;; Un solo demandante
   ask demandantes [
-    set haber random haber-maximo * 10000000
+    set haber random haber-maximo-oferentes-demandantes * 1000000
+    print (word "Demandante " who ": " haber " CRC")
     set demandas []
   ]
 end
@@ -107,16 +128,26 @@ end
 
 ;;Métodos de las acciones que realizarán los agentes cada iteración
 
-to iteracion-oferente
+to iteracion-oferente-mercado-abierto
 
 end
 
-to iteracion-demandante
+
+to iteracion-oferente-mercado-cerrado
+
+end
+
+to iteracion-demandante-mercado-abierto
+
+end
+
+to iteracion-demandante-mercado-cerrado
 
 end
 
 to iteracion-intermediario
   ask intermediarios [
+      if haber <= 0 [die]
       if estado = 0  [intermediario-buscar]
       if estado = 1  [intermediario-negociar]
       if estado = 2  [intermediario-pedir-ayuda]
@@ -135,10 +166,10 @@ to intermediario-pedir-ayuda
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-303
-22
-740
-460
+417
+35
+854
+473
 -1
 -1
 13.0
@@ -170,7 +201,7 @@ cantidad-intermediarios
 cantidad-intermediarios
 0
 100
-50.0
+5.0
 1
 1
 NIL
@@ -213,16 +244,42 @@ NIL
 SLIDER
 29
 115
-208
+308
 148
-haber-maximo
-haber-maximo
+haber-maximo-oferentes-demandantes
+haber-maximo-oferentes-demandantes
 0
 100
 50.0
 1
 1
-NIL
+M
+HORIZONTAL
+
+SWITCH
+28
+206
+208
+239
+esMercadoAbierto
+esMercadoAbierto
+1
+1
+-1000
+
+SLIDER
+28
+160
+264
+193
+haber-maximo-intermediarios
+haber-maximo-intermediarios
+0
+100
+12.0
+1
+1
+%
 HORIZONTAL
 
 @#$#@#$#@
