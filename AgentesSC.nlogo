@@ -12,7 +12,6 @@ breed[oferentes oferente]
 
 breed[demandantes demandante]
 
-
 ;; Declarando las variables de cada agente
 intermediarios-own
 [
@@ -44,6 +43,7 @@ demandantes-own
   demandas ;; lista de demandas creadas
 ]
 
+
 ;; Métodos default de cada iteración
 to setup
   clear-all
@@ -53,7 +53,7 @@ to setup
 end
 
 to go
-
+  ;;Segun habia entendido solo ibamos a hacerlo en un mundo cerrado
   ifelse esMercadoAbierto [
     iteracion-oferente-mercado-abierto
     iteracion-demandante-mercado-abierto
@@ -100,7 +100,14 @@ to set-oferente
   ask oferentes [
     set haber random haber-maximo-oferentes-demandantes * 1000000
     print (word "Oferente " who ": " haber " CRC")
-    set ofertas []
+    set ofertas [
+      ;id ;; identificador de la oferta
+      ;precio ;; precio de venta
+      ;comision ;; comisión maxima a pagar a un intermediario
+      ;fecha-creacion ;; numero de tic de la simulacion en el que la oferta es creada por el oferente
+      ;fecha-publicacion ;;numero de tic de la simulacion en el que la oferta es publicada en la pizarra
+      ;validez ;; numero de tics durante los cuales la oferta es valida; una vez transcurrido ese tiempo el agente debe borrar la oferta de la pizarra
+    ]
   ]
 end
 
@@ -110,7 +117,13 @@ to set-demandante
   ask demandantes [
     set haber random haber-maximo-oferentes-demandantes * 1000000
     print (word "Demandante " who ": " haber " CRC")
-    set demandas []
+    set demandas [
+      ;id ;; identificador de la demanda
+      ;rango-precios ;;rango de precios de compra
+      ;fecha-creacion ;; numero de tic de la simulacion en el que la demanda es creada por el cliente
+      ;fecha-publicacion ;;numero de tic de la simulacion en el que la demanda es publicada en la pizarra
+      ;validez ;; numero de tics durante los cuales la demanda es valida; una vez transcurrido ese tiempo el agente debe borrar la oferta de la pizarra
+    ]
   ]
 end
 to set-pizarra
@@ -127,14 +140,13 @@ to set-mundo ;; Método en caso de que se quiera implementar la parte gráfica d
 end
 
 ;;Métodos de las acciones que realizarán los agentes cada iteración
-
 to iteracion-oferente-mercado-abierto
 
 end
 
 
 to iteracion-oferente-mercado-cerrado
-
+;;Cada cuanto el oferente pone una oferta? todos los ticks ?
 end
 
 to iteracion-demandante-mercado-abierto
@@ -148,9 +160,9 @@ end
 to iteracion-intermediario
   ask intermediarios [
       if haber <= 0 [die]
-      if estado = 0  [intermediario-buscar]
-      if estado = 1  [intermediario-negociar]
-      if estado = 2  [intermediario-pedir-ayuda]
+      if estado = 0 [intermediario-buscar]
+      if estado = 1 [intermediario-negociar]
+      if estado = 2 [intermediario-pedir-ayuda]
   ]
 end
 
@@ -201,7 +213,7 @@ cantidad-intermediarios
 cantidad-intermediarios
 0
 100
-5.0
+0.0
 1
 1
 NIL
@@ -250,7 +262,7 @@ haber-maximo-oferentes-demandantes
 haber-maximo-oferentes-demandantes
 0
 100
-50.0
+0.0
 1
 1
 M
@@ -276,7 +288,7 @@ haber-maximo-intermediarios
 haber-maximo-intermediarios
 0
 100
-12.0
+0.0
 1
 1
 %
@@ -624,7 +636,7 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 6.0.2
+NetLogo 6.0.3
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@

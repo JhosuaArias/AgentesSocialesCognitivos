@@ -12,8 +12,6 @@ breed[oferentes oferente]
 
 breed[demandantes demandante]
 
-
-
 ;; Declarando las variables de cada agente
 intermediarios-own
 [
@@ -44,6 +42,7 @@ demandantes-own
   haber ;; riqueza del demandante
   demandas ;; lista de demandas creadas
 ]
+
 
 ;; Métodos default de cada iteración
 to setup
@@ -101,7 +100,14 @@ to set-oferente
   ask oferentes [
     set haber random haber-maximo-oferentes-demandantes * 1000000
     print (word "Oferente " who ": " haber " CRC")
-    set ofertas []
+    set ofertas [
+      id ;; identificador de la oferta
+      precio ;; precio de venta
+      comision ;; comisión maxima a pagar a un intermediario
+      fecha-creacion ;; numero de tic de la simulacion en el que la oferta es creada por el oferente
+      fecha-publicacion ;;numero de tic de la simulacion en el que la oferta es publicada en la pizarra
+      validez ;; numero de tics durante los cuales la oferta es valida; una vez transcurrido ese tiempo el agente debe borrar la oferta de la pizarra
+    ]
   ]
 end
 
@@ -111,7 +117,13 @@ to set-demandante
   ask demandantes [
     set haber random haber-maximo-oferentes-demandantes * 1000000
     print (word "Demandante " who ": " haber " CRC")
-    set demandas []
+    set demandas [
+      ;id ;; identificador de la demanda
+      rango-precios ;;rango de precios de compra
+      fecha-creacion ;; numero de tic de la simulacion en el que la demanda es creada por el cliente
+      fecha-publicacion ;;numero de tic de la simulacion en el que la demanda es publicada en la pizarra
+      validez ;; numero de tics durante los cuales la demanda es valida; una vez transcurrido ese tiempo el agente debe borrar la oferta de la pizarra
+    ]
   ]
 end
 to set-pizarra
@@ -201,7 +213,7 @@ cantidad-intermediarios
 cantidad-intermediarios
 0
 100
-5.0
+0.0
 1
 1
 NIL
@@ -250,7 +262,7 @@ haber-maximo-oferentes-demandantes
 haber-maximo-oferentes-demandantes
 0
 100
-37.0
+0.0
 1
 1
 M
@@ -276,7 +288,7 @@ haber-maximo-intermediarios
 haber-maximo-intermediarios
 0
 100
-14.0
+0.0
 1
 1
 %
