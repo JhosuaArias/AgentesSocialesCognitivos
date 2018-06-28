@@ -101,7 +101,7 @@ end
 
 ;; TODO esto hay que cambiarlo
 to set-oferente
-  create-oferentes 5 ;; Un solo oferente
+  create-oferentes  ;; Un solo oferente
   ask oferentes [
     set haber random haber-maximo-oferentes-demandantes * 1000000
     print (word "Oferente " who ": " haber " CRC")
