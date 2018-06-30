@@ -22,7 +22,8 @@ intermediarios-own
   haber ;; riqueza del agente
   ofertas ;;lista de ofertas tomadas de la pizarra
   demandas ;; lista de demandas tomadas de la pizarra
-  conocidos ;; lista de agentes conocidos con informacion acerca de ellos
+  conocidos ;; lista de agentes conocidos con informacion acerca de ellos ;;[id,confianza,[[fecha,tipo,precio,resultado]...]]
+  desconocidos ;; lista de agentes desconocidos para meter en la lista de conocidos alguno aleatorio
 
 ]
 
@@ -69,7 +70,10 @@ to go
     iteracion-demandante-mercado-cerrado
   ]
 
-  iteracion-intermediario
+  ask intermediarios[
+    iteracion-intermediario
+  ]
+
   imprimir-ofertas
   tick
 end
@@ -97,7 +101,8 @@ to set-intermediarios
     print (word "Intermediario " who ": " haber " CRC")
     set ofertas []
     set demandas []
-    set conocidos []
+    set conocidos [] ;;[id,confianza,[[fecha,tipo,precio,resultado]...]]
+    set desconocidos
   ]
 end
 
@@ -110,6 +115,11 @@ to set-oferente
     set oferta-temporal []
     set ofertas [] ;id, precio, comision, fecha-creacion, fecha-publicacion, validez
   ]
+
+  let my-list [[3 "a"][1 "b"]]
+  let other-list sort-with [ l -> item 0 l ] my-list
+  print my-list
+  print other-list
 end
 
 ;; TODO esto hay que cambiarlo
@@ -157,7 +167,7 @@ to crear-oferta
     ;; id, precio, comision, fecha-creacion, fecha-publicacion, validez
     set oferta-temporal lput id-ofertas oferta-temporal ;;Pone el id de la oferta
     set oferta-temporal lput random 101 oferta-temporal ;; Pone el precio de la oferta
-    set oferta-temporal lput random 4 oferta-temporal ;; Pone la comision de la oferta
+    set oferta-temporal lput ((random 3) + 1) oferta-temporal ;; Pone la comision de la oferta
     set oferta-temporal lput ticks oferta-temporal ;; Pone la fecha de creacion de la oferta
     set ofertas lput oferta-temporal ofertas ;; agrega la oferta a la lista de ofertas
     ;;Dejar listo para la proxima
@@ -207,7 +217,7 @@ end
 
 to iteracion-intermediario
   ask intermediarios [
-      if haber <= 0 [die]
+      if haber <= 0 [die] ;; si un intermediario no tiene dinero, sale del mercado
       if estado = 0 [intermediario-buscar]
       if estado = 1 [intermediario-negociar]
       if estado = 2 [intermediario-pedir-ayuda]
@@ -217,12 +227,37 @@ end
 ;;Métodos de apoyo para las iteraciones
 
 to intermediario-buscar
+
 end
 
 to intermediario-negociar
 end
 
 to intermediario-pedir-ayuda
+  ;;Ordenar la lista de los agentes conocidos según su nivel de confianza
+  set conocidos sort-with[l -> item 1 l] conocidos ;; item 1 por que en esa posición está la confianza
+
+  ;; Una variable para saber si el agente ha obtenido una respuesta de un agente
+  let respuesta false
+  let indice 0
+  let lista-size length conocidos
+  ;; Se le preguntan a las tortugas conocidas
+  while [(not respuesta) and (indice < lista-size) ] [
+
+  ]
+
+  ;;Si no hubo una respuesta
+
+
+
+  ;;
+end
+
+to intermediario-ordenar-ofertas-demandas
+end
+
+to-report sort-with [ key lst ] ;; Ordena una lista según una llave, se utiliza de esta forma sort-with [ l -> item n l ] my-list
+  report sort-by [ [a b] -> (runresult key a) < (runresult key b) ] lst
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -261,7 +296,7 @@ cantidad-intermediarios
 cantidad-intermediarios
 0
 100
-0.0
+5.0
 1
 1
 NIL
@@ -310,7 +345,7 @@ haber-maximo-oferentes-demandantes
 haber-maximo-oferentes-demandantes
 0
 100
-0.0
+20.0
 1
 1
 M
@@ -336,7 +371,7 @@ haber-maximo-intermediarios
 haber-maximo-intermediarios
 0
 100
-0.0
+22.0
 1
 1
 %
