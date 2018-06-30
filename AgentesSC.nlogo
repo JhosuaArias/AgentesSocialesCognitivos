@@ -49,7 +49,6 @@ demandantes-own
   demanda-temporal ;; objeto de la lista que es creada en el tick
 ]
 
-
 ;; Métodos default de cada iteración
 to setup
   clear-all
@@ -103,7 +102,7 @@ end
 
 ;; TODO esto hay que cambiarlo
 to set-oferente
-  create-oferentes 3 ;; Un solo oferente
+  create-oferentes 1 ;; Un solo oferente
   ask oferentes [
     set haber random haber-maximo-oferentes-demandantes * 1000000
     print (word "Oferente " who ": " haber " CRC")
@@ -126,6 +125,7 @@ end
 to imprimir-ofertas
   if ticks = 5[
     publicar-oferta
+    publicar-demanda
     ask oferentes[
       print (word "Oferente " who " ofertas: " ofertas)
     ]
@@ -142,6 +142,8 @@ to set-pizarra
   create-pizarras 1 ;; Una sola pizarra
   ask pizarras [
     set estado true
+    set demanda-temporal []
+    set oferta-temporal []
     set ofertas []
     set demandas[]
   ]
@@ -159,6 +161,7 @@ to crear-oferta
     set oferta-temporal lput random 101 oferta-temporal ;; Pone el precio de la oferta
     set oferta-temporal lput random 4 oferta-temporal ;; Pone la comision de la oferta
     set oferta-temporal lput ticks oferta-temporal ;; Pone la fecha de creacion de la oferta
+    set oferta-temporal lput random 10 oferta-temporal ;; Pone la validez, un numero random entre 0 - 9
     set ofertas lput oferta-temporal ofertas ;; agrega la oferta a la lista de ofertas
     ;;Dejar listo para la proxima
     set oferta-temporal [];;Vacia el espacio temporal de ofertas
@@ -173,6 +176,7 @@ to crear-demanda
     set demanda-temporal lput random 99 demanda-temporal ;; Pone el precio menor de la demanda
     set demanda-temporal lput (1 + (random (99 - item 1 demanda-temporal) + item 1 demanda-temporal)) demanda-temporal ;; Pone el precio mayor de la demanda
     set demanda-temporal lput ticks demanda-temporal ;; Pone la fecha de creacion de la demanda
+    set demanda-temporal lput random 10 demanda-temporal ;; Pone la validez, un numero random entre 0 - 9
     set demandas lput demanda-temporal demandas ;; agrega la demanda a la lista de demandas
     ;;Dejar listo para la proxima
     set demanda-temporal [];;Vacia el espacio temporal de demandas
@@ -183,15 +187,46 @@ end
 to publicar-oferta
   ask pizarras[
     let asking [ofertas] of oferentes
-    print (word "pizarra " who " demanda: " asking)
+    foreach (first asking)[ x ->
+      set oferta-temporal lput (item 0 x) oferta-temporal
+      set oferta-temporal lput (item 1 x) oferta-temporal
+      set oferta-temporal lput (item 2 x) oferta-temporal
+      set oferta-temporal lput (item 3 x) oferta-temporal
+      set oferta-temporal lput ticks oferta-temporal ;; Pone la fecha de publicación de la oferta
+      set oferta-temporal lput (item 4 x) oferta-temporal
+      set ofertas lput oferta-temporal ofertas ;; agrega la oferta a la lista de ofertas
+      set oferta-temporal [];;Vacia el espacio temporal de ofertas
+    ]
+    ask oferentes[
+      set ofertas[]
+    ]
+    print (word "pizarra " who " oferta: " ofertas)
   ]
 end
 
-;;Métodos de las acciones que realizarán los agentes cada iteración
+to publicar-demanda
+  ask pizarras[
+    let asking [demandas] of demandantes
+    foreach (first asking)[ x ->
+      set demanda-temporal lput (item 0 x) demanda-temporal
+      set demanda-temporal lput (item 1 x) demanda-temporal
+      set demanda-temporal lput (item 2 x) demanda-temporal
+      set demanda-temporal lput (item 3 x) demanda-temporal
+      set demanda-temporal lput ticks demanda-temporal ;; Pone la fecha de publicación de la oferta
+      set demanda-temporal lput (item 4 x) demanda-temporal
+      set demandas lput demanda-temporal demandas ;; agrega la oferta a la lista de ofertas
+      set demanda-temporal [];;Vacia el espacio temporal de ofertas
+    ]
+    ask demandantes[
+      set demandas[]
+    ]
+    print (word "pizarra " who " demandas: " demandas)
+  ]
+end
+
 to iteracion-oferente-mercado-abierto
 
 end
-
 
 to iteracion-oferente-mercado-cerrado
   crear-oferta
@@ -213,8 +248,6 @@ to iteracion-intermediario
       if estado = 2 [intermediario-pedir-ayuda]
   ]
 end
-
-;;Métodos de apoyo para las iteraciones
 
 to intermediario-buscar
 end
