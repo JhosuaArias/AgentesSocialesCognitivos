@@ -1,8 +1,7 @@
 globals
 [
-  volumen
-  id-ofertas ;;Variable que va marcando el id de las ofertas
-  id-demandas ;;Variable que va marcando el id de las demandas
+  id-ofertas ;; Ids para las ofertas existentes
+  id-demandas ;; Ids para las demandas existentes
 ]
 
 ;; Declarando los diferentes tipos de agentes que existen
@@ -14,6 +13,7 @@ breed[oferentes oferente]
 
 breed[demandantes demandante]
 
+
 ;; Declarando las variables de cada agente
 intermediarios-own
 [
@@ -22,31 +22,27 @@ intermediarios-own
   haber ;; riqueza del agente
   ofertas ;;lista de ofertas tomadas de la pizarra
   demandas ;; lista de demandas tomadas de la pizarra
-  conocidos ;; lista de agentes conocidos con informacion acerca de ellos
-
+  conocidos ;; lista de agentes conocidos con informacion acerca de ellos ;;[id,confianza,[[fecha,tipo,precio,resultado]...]]
+  desconocidos ;; lista de agentes desconocidos para meter en la lista de conocidos alguno aleatorio
 ]
 
 pizarras-own
 [
   estado ;; no accesible = false, accesible = true
-  ofertas
-  oferta-temporal
-  demandas
-  demanda-temporal
+  ofertas-pizarra
+  demandas-pizarra
 ]
 
 oferentes-own
 [
   haber ;; riqueza del oferente
   ofertas ;;lista de ofertas creadas
-  oferta-temporal ;; objeto de la lista que es creada en el tick
 ]
 
 demandantes-own
 [
   haber ;; riqueza del demandante
   demandas ;; lista de demandas creadas
-  demanda-temporal ;; objeto de la lista que es creada en el tick
 ]
 
 ;; Métodos default de cada iteración
@@ -58,35 +54,45 @@ to setup
 end
 
 to go
-  ;;Segun habia entendido solo ibamos a hacerlo en un mundo cerrado
-  ifelse esMercadoAbierto [
-    iteracion-oferente-mercado-abierto
-    iteracion-demandante-mercado-abierto
+
+  if-else esMercadoAbierto [
+    ;; Por el momento nada
   ]
   [
-    iteracion-oferente-mercado-cerrado
-    iteracion-demandante-mercado-cerrado
-  ]
+    let todas-ofertas [ofertas] of oferentes
+    let todas-demandas [demandas] of demandantes
 
-  iteracion-intermediario
-  imprimir-ofertas
-  tick
+    set todas-ofertas remove [] todas-ofertas
+    set todas-demandas remove[] todas-demandas
+
+    if((not empty? todas-ofertas) or (not empty? todas-demandas)) [
+
+      iteracion-oferente-mercado-cerrado
+      iteracion-demandante-mercado-cerrado
+      iteracion-intermediario-mercado-cerrado
+
+      imprimir-ofertas-oferentes
+      imprimir-demandas-demandantes
+      imprimir-pizarra
+
+      tick
+    ]
+  ]
 end
+
 
 ;; Definiendo los agentes con sus respectivas variables
 to set-agentes
+  set-pizarra
   set-oferente
   set-demandante
   set-intermediarios
-  set-pizarra
 end
 
 to set-intermediarios
+
   create-intermediarios cantidad-intermediarios
-
-  let haber-maximo 0
-
-  ask oferentes [set haber-maximo haber]
+  let haber-maximo max [haber] of oferentes
 
   ask intermediarios [
     set id who
@@ -100,172 +106,192 @@ to set-intermediarios
   ]
 end
 
-;; TODO esto hay que cambiarlo
 to set-oferente
-  create-oferentes 1 ;; Un solo oferente
+  set id-ofertas 0
+  create-oferentes numero-oferentes ;; Un solo oferente, esto puede ser cambiado con slider en un futuro
   ask oferentes [
     set haber random haber-maximo-oferentes-demandantes * 1000000
     print (word "Oferente " who ": " haber " CRC")
-    set oferta-temporal []
-    set ofertas [] ;id, precio, comision, fecha-creacion, fecha-publicacion, validez
+    set ofertas []
+
+    if-else esMercadoAbierto [
+     ;; Por el momento nada
+    ]
+    [
+     set-todas-ofertas ;id, precio, comision, fecha-creacion, fecha-publicacion, validez
+    ]
   ]
 end
-
-;; TODO esto hay que cambiarlo
 to set-demandante
-  create-demandantes 1 ;; Un solo demandante
+  set id-demandas 0
+  create-demandantes numero-demandantes  ;; Un solo demandante, esto puede ser cambiado con slider en un futuro
   ask demandantes [
     set haber random haber-maximo-oferentes-demandantes * 1000000
     print (word "Demandante " who ": " haber " CRC")
-    set demanda-temporal []
-    set demandas [] ;id, rango-precios, fecha-creacion, fecha-publicacion, validez
-  ]
-end
+    set demandas []
 
-to imprimir-ofertas
-  if ticks = 5[
-    publicar-oferta
-    publicar-demanda
-    ask oferentes[
-      print (word "Oferente " who " ofertas: " ofertas)
+    if-else esMercadoAbierto [
+     ;; Por el momento nada
     ]
-    ask demandantes[
-      print (word "Demandante " who " demanda: " demandas)
+    [
+       set-todas-demandas ;id, rango-precios, fecha-creacion, fecha-publicacion, validez
     ]
   ]
-  if ticks = 8[
-
-  ]
 end
-
 to set-pizarra
   create-pizarras 1 ;; Una sola pizarra
   ask pizarras [
     set estado true
-    set demanda-temporal []
-    set oferta-temporal []
-    set ofertas []
-    set demandas[]
+    set ofertas-pizarra []
+    set demandas-pizarra []
   ]
 end
 
-to set-mundo ;; Método en caso de que se quiera implementar la parte gráfica de la simulación
-  set id-ofertas 0
-  set id-demandas 0
-end
-
-to crear-oferta
-  ask oferentes[
-    ;; id, precio, comision, fecha-creacion, fecha-publicacion, validez
+to set-todas-ofertas
+  let indice 0
+  while [indice < numero-valores-a-crear] [
+    let oferta-temporal []
+     ;; id, precio, comision, fecha-creacion, fecha-publicacion, validez
     set oferta-temporal lput id-ofertas oferta-temporal ;;Pone el id de la oferta
     set oferta-temporal lput random 101 oferta-temporal ;; Pone el precio de la oferta
     set oferta-temporal lput random 4 oferta-temporal ;; Pone la comision de la oferta
-    set oferta-temporal lput ticks oferta-temporal ;; Pone la fecha de creacion de la oferta
+    set oferta-temporal lput 1 oferta-temporal ;; Pone la fecha de creacion de la oferta
     set oferta-temporal lput random 10 oferta-temporal ;; Pone la validez, un numero random entre 0 - 9
     set ofertas lput oferta-temporal ofertas ;; agrega la oferta a la lista de ofertas
-    ;;Dejar listo para la proxima
-    set oferta-temporal [];;Vacia el espacio temporal de ofertas
     set id-ofertas id-ofertas + 1 ;;Aumenta el id general de las ofertas
+
+    set indice  ( indice + 1 )
   ]
+  print word "Todas las ofertas: " ofertas
 end
 
-to crear-demanda
-  ask demandantes[
-    ;; id, precio-menor, precio-mayor, fecha-creacion, fecha-publicacion, validez
+to set-todas-demandas
+  let indice 0
+  while [indice < numero-valores-a-crear] [
+    let demanda-temporal [];;Vacia el espacio temporal de ofertas
+     ;; id, precio-menor, precio-mayor, fecha-creacion, fecha-publicacion, validez
     set demanda-temporal lput id-demandas demanda-temporal;;Pone el id de la demanda
     set demanda-temporal lput random 99 demanda-temporal ;; Pone el precio menor de la demanda
     set demanda-temporal lput (1 + (random (99 - item 1 demanda-temporal) + item 1 demanda-temporal)) demanda-temporal ;; Pone el precio mayor de la demanda
-    set demanda-temporal lput ticks demanda-temporal ;; Pone la fecha de creacion de la demanda
+    set demanda-temporal lput 1 demanda-temporal ;; Pone la fecha de creacion de la demanda
     set demanda-temporal lput random 10 demanda-temporal ;; Pone la validez, un numero random entre 0 - 9
     set demandas lput demanda-temporal demandas ;; agrega la demanda a la lista de demandas
-    ;;Dejar listo para la proxima
-    set demanda-temporal [];;Vacia el espacio temporal de demandas
-    set id-demandas id-demandas + 1;;Aumenta el id general de las demandas
+    set id-ofertas id-ofertas + 1 ;;Aumenta el id general de las ofertas
+    set indice  ( indice + 1 )
+  ]
+  print word "Todas las demandas: " demandas
+end
+
+
+to set-mundo ;; Método en caso de que se quiera implementar la parte gráfica de la simulación
+
+end
+;;Métodos para publicar ofertas y demandas
+
+to publicar-ofertas
+
+    let cantidad-a-publicar random publicaciones-por-tick ;; Se crea un número aleatorio de la cantidad de ofertas a publicar
+    let indice 0
+
+    while [(indice < cantidad-a-publicar) and (not empty? ofertas)] [
+      let indice-oferta random (length ofertas) ;; Se define un número aleatorio que será la oferta a publicar
+
+      let oferta-temporal item indice-oferta ofertas
+
+      ask pizarras [
+        set ofertas-pizarra lput oferta-temporal ofertas-pizarra
+      ]
+
+      set ofertas remove-item indice-oferta ofertas
+      set indice indice + 1
+    ]
+end
+
+to publicar-demandas
+
+   let cantidad-a-publicar random publicaciones-por-tick ;; Se crea un número aleatorio de la cantidad de ofertas a publicar
+   let indice 0
+
+   while [(indice < cantidad-a-publicar) and (not empty? demandas)] [
+      let indice-demanda random (length demandas) ;; Se define un número aleatorio que será la demanda a publicar
+
+      let demanda-temporal item indice-demanda demandas
+
+      ask pizarras [
+        set demandas-pizarra lput demanda-temporal demandas-pizarra
+      ]
+
+      set demandas remove-item indice-demanda demandas
+      set indice indice + 1
   ]
 end
 
-to publicar-oferta
-  ask pizarras[
-    let asking [ofertas] of oferentes
-    foreach (first asking)[ x ->
-      set oferta-temporal lput (item 0 x) oferta-temporal
-      set oferta-temporal lput (item 1 x) oferta-temporal
-      set oferta-temporal lput (item 2 x) oferta-temporal
-      set oferta-temporal lput (item 3 x) oferta-temporal
-      set oferta-temporal lput ticks oferta-temporal ;; Pone la fecha de publicación de la oferta
-      set oferta-temporal lput (item 4 x) oferta-temporal
-      set ofertas lput oferta-temporal ofertas ;; agrega la oferta a la lista de ofertas
-      set oferta-temporal [];;Vacia el espacio temporal de ofertas
-    ]
-    ask oferentes[
-      set ofertas[]
-    ]
-    print (word "pizarra " who " oferta: " ofertas)
-  ]
-end
-
-to publicar-demanda
-  ask pizarras[
-    let asking [demandas] of demandantes
-    foreach (first asking)[ x ->
-      set demanda-temporal lput (item 0 x) demanda-temporal
-      set demanda-temporal lput (item 1 x) demanda-temporal
-      set demanda-temporal lput (item 2 x) demanda-temporal
-      set demanda-temporal lput (item 3 x) demanda-temporal
-      set demanda-temporal lput ticks demanda-temporal ;; Pone la fecha de publicación de la oferta
-      set demanda-temporal lput (item 4 x) demanda-temporal
-      set demandas lput demanda-temporal demandas ;; agrega la oferta a la lista de ofertas
-      set demanda-temporal [];;Vacia el espacio temporal de ofertas
-    ]
-    ask demandantes[
-      set demandas[]
-    ]
-    print (word "pizarra " who " demandas: " demandas)
-  ]
-end
-
-to iteracion-oferente-mercado-abierto
-
-end
+;;Métodos de las acciones que realizarán los agentes cada iteración
 
 to iteracion-oferente-mercado-cerrado
-  crear-oferta
-end
-
-to iteracion-demandante-mercado-abierto
-
+  ask oferentes [
+    publicar-ofertas
+  ]
 end
 
 to iteracion-demandante-mercado-cerrado
-  crear-demanda
-end
-
-to iteracion-intermediario
-  ask intermediarios [
-      if haber <= 0 [die]
-      if estado = 0 [intermediario-buscar]
-      if estado = 1 [intermediario-negociar]
-      if estado = 2 [intermediario-pedir-ayuda]
+  ask demandantes [
+    publicar-demandas
   ]
 end
 
-to intermediario-buscar
+to iteracion-intermediario-mercado-cerrado
+  ask intermediarios [
+    if-else haber <= 0 [die] [
+      if estado = 0  [intermediario-buscar-mercado-cerrado]
+      if estado = 1  [intermediario-negociar-mercado-cerrado]
+      if estado = 2  [intermediario-pedir-ayuda-mercado-cerrado]
+    ]
+  ]
 end
 
-to intermediario-negociar
+;;Métodos de apoyo para las iteraciones
+
+to intermediario-buscar-mercado-cerrado
 end
 
-to intermediario-pedir-ayuda
+to intermediario-negociar-mercado-cerrado
+end
+
+to intermediario-pedir-ayuda-mercado-cerrado
+end
+
+;;Métodos para imprimir datos
+
+to imprimir-pizarra
+  ask pizarras [
+    print word "Ofertas: " ofertas-pizarra
+    print word "Demandas: " demandas-pizarra
+  ]
+end
+
+to imprimir-ofertas-oferentes
+  ask oferentes [
+    print word "Oferente: " who
+    print word "Ofertas: " ofertas
+  ]
+end
+
+to imprimir-demandas-demandantes
+  ask demandantes [
+    print word "Demandante: " who
+    print word "Demandas: " demandas
+  ]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-417
-35
-854
-473
+410
+62
+719
+372
 -1
 -1
-13.0
+9.121212121212123
 1
 10
 1
@@ -294,7 +320,7 @@ cantidad-intermediarios
 cantidad-intermediarios
 0
 100
-0.0
+5.0
 1
 1
 NIL
@@ -342,8 +368,8 @@ SLIDER
 haber-maximo-oferentes-demandantes
 haber-maximo-oferentes-demandantes
 0
-100
-0.0
+25
+25.0
 1
 1
 M
@@ -351,9 +377,9 @@ HORIZONTAL
 
 SWITCH
 28
-206
+290
 208
-239
+323
 esMercadoAbierto
 esMercadoAbierto
 1
@@ -369,7 +395,7 @@ haber-maximo-intermediarios
 haber-maximo-intermediarios
 0
 100
-0.0
+1.0
 1
 1
 %
@@ -391,6 +417,66 @@ NIL
 NIL
 NIL
 1
+
+SLIDER
+28
+207
+253
+240
+numero-valores-a-crear
+numero-valores-a-crear
+100
+10000
+100.0
+1
+1
+valores
+HORIZONTAL
+
+SLIDER
+28
+248
+200
+281
+publicaciones-por-tick
+publicaciones-por-tick
+1
+100
+7.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+27
+335
+199
+368
+numero-oferentes
+numero-oferentes
+1
+10
+1.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+26
+375
+198
+408
+numero-demandantes
+numero-demandantes
+1
+10
+1.0
+1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
