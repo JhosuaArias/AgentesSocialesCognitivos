@@ -65,7 +65,7 @@ to go
     set todas-ofertas remove [] todas-ofertas
     set todas-demandas remove[] todas-demandas
 
-    if((not empty? todas-ofertas) or (not empty? todas-demandas)) [
+    if not((empty? todas-ofertas) and (empty? todas-demandas)) [
 
       iteracion-oferente-mercado-cerrado
       iteracion-demandante-mercado-cerrado
@@ -103,6 +103,9 @@ to set-intermediarios
     set ofertas []
     set demandas []
     set conocidos []
+    set desconocidos [who] of intermediarios ;; Se insertan todos los ids de los intermediarios desconocidos
+    set desconocidos remove id desconocidos ;; Se quita el id del pripio agente (Yo me conozco a mi mismo)
+    print (word "Intermediario: " id ": " desconocidos)
   ]
 end
 
@@ -358,7 +361,7 @@ NIL
 NIL
 NIL
 NIL
-0
+1
 
 SLIDER
 29
