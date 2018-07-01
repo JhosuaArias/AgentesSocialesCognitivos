@@ -102,13 +102,13 @@ to set-intermediarios
     set ofertas []
     set demandas []
     set conocidos [] ;;[id,confianza,[[fecha,tipo,precio,resultado]...]]
-    set desconocidos
   ]
+
 end
 
 ;; TODO esto hay que cambiarlo
 to set-oferente
-  create-oferentes 3 ;; Un solo oferente
+  create-oferentes 1 ;; Un solo oferente
   ask oferentes [
     set haber random haber-maximo-oferentes-demandantes * 1000000
     print (word "Oferente " who ": " haber " CRC")
@@ -116,10 +116,6 @@ to set-oferente
     set ofertas [] ;id, precio, comision, fecha-creacion, fecha-publicacion, validez
   ]
 
-  let my-list [[3 "a"][1 "b"]]
-  let other-list sort-with [ l -> item 0 l ] my-list
-  print my-list
-  print other-list
 end
 
 ;; TODO esto hay que cambiarlo
@@ -243,11 +239,30 @@ to intermediario-pedir-ayuda
   let lista-size length conocidos
   ;; Se le preguntan a las tortugas conocidas
   while [(not respuesta) and (indice < lista-size) ] [
+    let estado-intermediario 0
+    ask intermediario (item 0 (item indice conocidos)) [set estado-intermediario estado]
+    if (estado-intermediario = 3) [
 
+      ;; Aquí el otro intermediario tiene que tener alguna forma de decir si quiere transar conmigo.
+      ;; Puede hacerse en función a la confianza que tiene ese intermediario conmigo.
+
+      let trato-hecho false ;; este valor debe ser si hubo un trato con el otro intermediario o no
+
+      if-else trato-hecho [
+        ;; Si hubo trato, aumentar confianza con esta persona
+      ]
+      [
+        ;; No hubo trato, disminuir confianza con esta persona
+      ]
+      set respuesta true
+    ]
+    set indice (indice + 1)
   ]
 
-  ;;Si no hubo una respuesta
-
+  ;;Si no hubo una respuesta preguntarle a alguien desconocido se quiere
+  if (not respuesta) [ ;; Aquí sería mejor preguntarle a la gente si quiere
+    set conocidos lput (list (one-of desconocidos) 1 []) conocidos
+  ]
 
 
   ;;
@@ -296,7 +311,7 @@ cantidad-intermediarios
 cantidad-intermediarios
 0
 100
-5.0
+1.0
 1
 1
 NIL
@@ -345,7 +360,7 @@ haber-maximo-oferentes-demandantes
 haber-maximo-oferentes-demandantes
 0
 100
-20.0
+1.0
 1
 1
 M
@@ -371,7 +386,7 @@ haber-maximo-intermediarios
 haber-maximo-intermediarios
 0
 100
-22.0
+0.0
 1
 1
 %
