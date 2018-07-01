@@ -28,7 +28,7 @@ intermediarios-own
 
 pizarras-own
 [
-  estado ;; no accesible = false, accesible = true
+  esAccesible ;; no accesible = false, accesible = true
   ofertas-pizarra
   demandas-pizarra
 ]
@@ -254,14 +254,60 @@ to iteracion-intermediario-mercado-cerrado
 end
 
 ;;Métodos de apoyo para las iteraciones
-
+;;To-do
 to intermediario-buscar-mercado-cerrado
-end
 
+  let estaBloqueado one-of [esAccesible] of pizarras
+
+  if not estaBloqueado [
+
+    ask pizarras [set esAccesible false] ;; Reservamos la pizarra solo para un intermediario
+
+
+
+    ask pizarras [set esAccesible false] ;; Desbloqueamos la pizarra para que cualquier otro pueda agarrarla
+  ]
+end
+;;To-do
 to intermediario-negociar-mercado-cerrado
 end
-
+;;To-do
 to intermediario-pedir-ayuda-mercado-cerrado
+
+  ;;Ordenar la lista de los agentes conocidos según su nivel de confianza
+  set conocidos sort-with[l -> item 1 l] conocidos ;; item 1 por que en esa posición está la confianza
+
+  ;; Una variable para saber si el agente ha obtenido una respuesta de un agente
+  let respuesta false
+  let indice 0
+  let lista-size length conocidos
+  ;; Se le preguntan a las tortugas conocidas
+  while [(not respuesta) and (indice < lista-size) ] [
+    let estado-intermediario 0
+    ask intermediario (item 0 (item indice conocidos)) [set estado-intermediario estado]
+    if (estado-intermediario = 3) [
+
+      ;; Aquí el otro intermediario tiene que tener alguna forma de decir si quiere transar conmigo.
+      ;; Puede hacerse en función a la confianza que tiene ese intermediario conmigo.
+
+      let trato-hecho false ;; este valor debe ser si hubo un trato con el otro intermediario o no
+
+      if-else trato-hecho [
+        ;; Si hubo trato, aumentar confianza con esta persona
+      ]
+      [
+        ;; No hubo trato, disminuir confianza con esta persona
+      ]
+      set respuesta true
+    ]
+    set indice (indice + 1)
+  ]
+
+  ;;Si no hubo una respuesta preguntarle a alguien desconocido se quiere
+  if (not respuesta) [ ;; Aquí sería mejor preguntarle si está disponible... en caso que no, no meterlo a la lista de conocidos
+    set conocidos lput (list (one-of desconocidos) 1 []) conocidos
+  ]
+
 end
 
 ;;Métodos para imprimir datos
@@ -285,6 +331,11 @@ to imprimir-demandas-demandantes
     print word "Demandante: " who
     print word "Demandas: " demandas
   ]
+end
+
+;;Métodos de ordenamiento de lista con una llave
+to-report sort-with [ key lst ] ;; Ordena una lista según una llave, se utiliza de esta forma sort-with [ l -> item n l ] my-list
+  report sort-by [ [a b] -> (runresult key a) < (runresult key b) ] lst
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
