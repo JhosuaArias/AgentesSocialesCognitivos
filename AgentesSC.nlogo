@@ -24,6 +24,9 @@ intermediarios-own
   demandas ;; lista de demandas tomadas de la pizarra
   conocidos ;; lista de agentes conocidos con informacion acerca de ellos ;;[id,confianza,[[fecha,tipo,precio,resultado]...]]
   desconocidos ;; lista de agentes desconocidos para meter en la lista de conocidos alguno aleatorio
+
+  subestado ;; Subestado cuando un intermediario está buscando ayuda;; primera vez = 0, conocidos = 1, desconocidos = 2
+  indice-conocidos ;; Llevar un conteo de los conocidos a los cuales preguntarles si ocupan ayuda.
 ]
 
 pizarras-own
@@ -144,7 +147,7 @@ end
 to set-pizarra
   create-pizarras 1 ;; Una sola pizarra
   ask pizarras [
-    set estado true
+    set esAccesible true
     set ofertas-pizarra []
     set demandas-pizarra []
   ]
@@ -255,61 +258,91 @@ end
 
 ;;Métodos de apoyo para las iteraciones
 ;;To-do
-to intermediario-buscar-mercado-cerrado
+to intermediario-buscar-mercado-cerrado ;;Estado 0
 
-  let estaBloqueado one-of [esAccesible] of pizarras
+  let idPizarra one-of [who] of pizarras
+  let estaAccesible [esAccesible] of pizarra idPizarra
 
-  if not estaBloqueado [
+  if  estaAccesible [
 
-    ask pizarras [set esAccesible false] ;; Reservamos la pizarra solo para un intermediario
+    ask pizarra idPizarra [set esAccesible false] ;; Reservamos la pizarra solo para un intermediario
+    ;;Se adquieren las ofertas y demandas de la pizarra
+    let lista-ofertas [ofertas-pizarra] of pizarra idPizarra
+    let lista-demandas [demandas-pizarra] of pizarra idPizarra
+    ;;Se ordenan según una heuristica escogida
+    set lista-ofertas ordenar-ofertas-precio-comision lista-ofertas
+    set lista-demandas ordenar-demandas-precios lista-demandas
+    ;;Se agarra una oferta y una demanda de las listas
 
+    ;; Se borran esas ofertas y demandas de la pizarra
 
+    ;;En caso de que hayan ofertas y demandas compatibles se pasa al estado de negociando
 
-    ask pizarras [set esAccesible false] ;; Desbloqueamos la pizarra para que cualquier otro pueda agarrarla
+    ;;En caso de que no, se pasa en el estado de pidiendo ayuda
+
+    ;;Si no tengo ni ofertas ni demandas el estado de buscando persiste
+
+    ask pizarra idPizarra [set esAccesible true] ;; Desbloqueamos la pizarra para que cualquier otro pueda agarrarla
   ]
 end
+
 ;;To-do
-to intermediario-negociar-mercado-cerrado
+to intermediario-negociar-mercado-cerrado ;;Estado 1
+  ;;Se busca una coincidencia entre oferta y demanda
+
+  ;;Se actualiza el haber del intermediario (Haber+(Precio_Oferta*Comision))
+
+  ;;Se actualiza el haber del oferente (Haber+(Precio_Oferta -(Precio_Oferta*Comision)))
+
+  ;; Se actualiza el haber del demandante (Haber-Precio_Oferta)
+
+  ;;Se borran de mi lista de ofertas y demandas
+
+  ;;Se cambia el estado a buscando
 end
+
 ;;To-do
-to intermediario-pedir-ayuda-mercado-cerrado
+to intermediario-pedir-ayuda-mercado-cerrado ;;Estado 2
+  ;;Esto tiene varios subestados, se tiene que hacer en varios ticks
 
-  ;;Ordenar la lista de los agentes conocidos según su nivel de confianza
-  set conocidos sort-with[l -> item 1 l] conocidos ;; item 1 por que en esa posición está la confianza
-
-  ;; Una variable para saber si el agente ha obtenido una respuesta de un agente
-  let respuesta false
-  let indice 0
-  let lista-size length conocidos
-  ;; Se le preguntan a las tortugas conocidas
-  while [(not respuesta) and (indice < lista-size) ] [
-    let estado-intermediario 0
-    ask intermediario (item 0 (item indice conocidos)) [set estado-intermediario estado]
-    if (estado-intermediario = 3) [
-
-      ;; Aquí el otro intermediario tiene que tener alguna forma de decir si quiere transar conmigo.
-      ;; Puede hacerse en función a la confianza que tiene ese intermediario conmigo.
-
-      let trato-hecho false ;; este valor debe ser si hubo un trato con el otro intermediario o no
-
-      if-else trato-hecho [
-        ;; Si hubo trato, aumentar confianza con esta persona
-      ]
-      [
-        ;; No hubo trato, disminuir confianza con esta persona
-      ]
-      set respuesta true
-    ]
-    set indice (indice + 1)
+  if subestado = 0[ ;; Primera vez que el intermediario entra en este estado, se ordenará la lista de conocidos según una heurística y se le preguntará al primero si quiere hacer un trato
+    ordenar-lista-conocidos
+    preguntar-intermediario-conocido
   ]
-
-  ;;Si no hubo una respuesta preguntarle a alguien desconocido se quiere
-  if (not respuesta) [ ;; Aquí sería mejor preguntarle si está disponible... en caso que no, no meterlo a la lista de conocidos
-    set conocidos lput (list (one-of desconocidos) 1 []) conocidos
+  if subestado = 1[ ;; Si algún conocido no estaba disponible para hacer un trato o lo declinó, se le pregunta al siguiente en la lista
+    preguntar-intermediario-conocido
+  ]
+  if subestado = 2[ ;; Si ya no tengo más conocidos a los cuales preguntarle, le preguntaré a un desconocido...
+    preguntar-intermediario-desconocido
   ]
 
 end
 
+;;métodos para Subestados del estado Pidiendo ayuda
+
+to ordenar-lista-conocidos
+end
+
+to preguntar-intermediario-conocido
+end
+
+to preguntar-intermediario-desconocido
+end
+
+;;Métodos heurísticos para toma de decisiones
+
+to-report ordenar-ofertas-precio-comision [lst]
+  report []
+end
+
+to-report ordenar-demandas-precios [lst]
+  report []
+end
+
+;;Nota esto debe ser cambiado, no tiene sentido que sea un random bool
+to-report decidir-hacer-trato-con-otro-agente
+  report one-of [true false]
+end
 ;;Métodos para imprimir datos
 
 to imprimir-pizarra
@@ -874,7 +907,7 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 6.0.3
+NetLogo 6.0.2
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
