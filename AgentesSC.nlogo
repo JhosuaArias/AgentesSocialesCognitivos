@@ -19,9 +19,9 @@ intermediarios-own
 [
   id ;; identificacion del agente
   estado ;; buscando = 0 , negociando = 1, pidiendo ayuda = 2.
-  haber ;; riqueza del agente
-  ofertas ;;lista de ofertas tomadas de la pizarra
-  demandas ;; lista de demandas tomadas de la pizarra
+  haber-intermediario ;; riqueza del agente
+  ofertas-intermediario ;;lista de ofertas tomadas de la pizarra
+  demandas-intermediario ;; lista de demandas tomadas de la pizarra
   conocidos ;; lista de agentes conocidos con informacion acerca de ellos ;;[id,confianza,[[fecha,tipo,precio,resultado]...]]
   desconocidos ;; lista de agentes desconocidos para meter en la lista de conocidos alguno aleatorio
 
@@ -38,14 +38,14 @@ pizarras-own
 
 oferentes-own
 [
-  haber ;; riqueza del oferente
-  ofertas ;;lista de ofertas creadas
+  haber-oferente ;; riqueza del oferente
+  ofertas-oferente ;;lista de ofertas creadas
 ]
 
 demandantes-own
 [
-  haber ;; riqueza del demandante
-  demandas ;; lista de demandas creadas
+  haber-demandante ;; riqueza del demandante
+  demandas-demandante ;; lista de demandas creadas
 ]
 
 ;; Métodos default de cada iteración
@@ -62,8 +62,8 @@ to go
     ;; Por el momento nada
   ]
   [
-    let todas-ofertas [ofertas] of oferentes
-    let todas-demandas [demandas] of demandantes
+    let todas-ofertas [ofertas-oferente] of oferentes
+    let todas-demandas [demandas-demandante] of demandantes
 
     set todas-ofertas remove [] todas-ofertas
     set todas-demandas remove[] todas-demandas
@@ -95,16 +95,16 @@ end
 to set-intermediarios
 
   create-intermediarios cantidad-intermediarios
-  let haber-maximo max [haber] of oferentes
+  let haber-maximo max [haber-oferente] of oferentes
 
   ask intermediarios [
     set id who
     set estado 0
     ;; Los intermediarios tendrán un número aleatorio entre 0 y el porcentaje del haber maximo del oferente
-    set haber random (int haber-maximo * (haber-maximo-intermediarios / 100.0) )
-    print (word "Intermediario " who ": " haber " CRC")
-    set ofertas []
-    set demandas []
+    set haber-intermediario random (int haber-maximo * (haber-maximo-intermediarios / 100.0) )
+    print (word "Intermediario " who ": " haber-intermediario " CRC")
+    set ofertas-intermediario []
+    set demandas-intermediario []
     set conocidos []
     set desconocidos [who] of intermediarios ;; Se insertan todos los ids de los intermediarios desconocidos
     set desconocidos remove id desconocidos ;; Se quita el id del pripio agente (Yo me conozco a mi mismo)
@@ -116,9 +116,9 @@ to set-oferente
   set id-ofertas 0
   create-oferentes numero-oferentes ;; Un solo oferente, esto puede ser cambiado con slider en un futuro
   ask oferentes [
-    set haber random haber-maximo-oferentes-demandantes * 1000000
-    print (word "Oferente " who ": " haber " CRC")
-    set ofertas []
+    set haber-oferente random haber-maximo-oferentes-demandantes * 1000000
+    print (word "Oferente " who ": " haber-oferente " CRC")
+    set ofertas-oferente []
 
     if-else esMercadoAbierto [
      ;; Por el momento nada
@@ -132,9 +132,9 @@ to set-demandante
   set id-demandas 0
   create-demandantes numero-demandantes  ;; Un solo demandante, esto puede ser cambiado con slider en un futuro
   ask demandantes [
-    set haber random haber-maximo-oferentes-demandantes * 1000000
-    print (word "Demandante " who ": " haber " CRC")
-    set demandas []
+    set haber-demandante random haber-maximo-oferentes-demandantes * 1000000
+    print (word "Demandante " who ": " haber-demandante " CRC")
+    set demandas-demandante []
 
     if-else esMercadoAbierto [
      ;; Por el momento nada
@@ -163,12 +163,12 @@ to set-todas-ofertas
     set oferta-temporal lput random 4 oferta-temporal ;; Pone la comision de la oferta
     set oferta-temporal lput 1 oferta-temporal ;; Pone la fecha de creacion de la oferta
     set oferta-temporal lput random 10 oferta-temporal ;; Pone la validez, un numero random entre 0 - 9
-    set ofertas lput oferta-temporal ofertas ;; agrega la oferta a la lista de ofertas
+    set ofertas-oferente lput oferta-temporal ofertas-oferente ;; agrega la oferta a la lista de ofertas
     set id-ofertas id-ofertas + 1 ;;Aumenta el id general de las ofertas
 
     set indice  ( indice + 1 )
   ]
-  print word "Todas las ofertas: " ofertas
+  print word "Todas las ofertas: " ofertas-oferente
 end
 
 to set-todas-demandas
@@ -181,11 +181,11 @@ to set-todas-demandas
     set demanda-temporal lput (1 + (random (99 - item 1 demanda-temporal) + item 1 demanda-temporal)) demanda-temporal ;; Pone el precio mayor de la demanda
     set demanda-temporal lput 1 demanda-temporal ;; Pone la fecha de creacion de la demanda
     set demanda-temporal lput random 10 demanda-temporal ;; Pone la validez, un numero random entre 0 - 9
-    set demandas lput demanda-temporal demandas ;; agrega la demanda a la lista de demandas
+    set demandas-demandante lput demanda-temporal demandas-demandante ;; agrega la demanda a la lista de demandas
     set id-ofertas id-ofertas + 1 ;;Aumenta el id general de las ofertas
     set indice  ( indice + 1 )
   ]
-  print word "Todas las demandas: " demandas
+  print word "Todas las demandas: " demandas-demandante
 end
 
 
@@ -199,16 +199,16 @@ to publicar-ofertas
     let cantidad-a-publicar random publicaciones-por-tick ;; Se crea un número aleatorio de la cantidad de ofertas a publicar
     let indice 0
 
-    while [(indice < cantidad-a-publicar) and (not empty? ofertas)] [
-      let indice-oferta random (length ofertas) ;; Se define un número aleatorio que será la oferta a publicar
+    while [(indice < cantidad-a-publicar) and (not empty? ofertas-oferente)] [
+      let indice-oferta random (length ofertas-oferente) ;; Se define un número aleatorio que será la oferta a publicar
 
-      let oferta-temporal item indice-oferta ofertas
+      let oferta-temporal item indice-oferta ofertas-oferente
 
       ask pizarras [
         set ofertas-pizarra lput oferta-temporal ofertas-pizarra
       ]
 
-      set ofertas remove-item indice-oferta ofertas
+      set ofertas-oferente remove-item indice-oferta ofertas-oferente
       set indice indice + 1
     ]
 end
@@ -218,16 +218,16 @@ to publicar-demandas
    let cantidad-a-publicar random publicaciones-por-tick ;; Se crea un número aleatorio de la cantidad de ofertas a publicar
    let indice 0
 
-   while [(indice < cantidad-a-publicar) and (not empty? demandas)] [
-      let indice-demanda random (length demandas) ;; Se define un número aleatorio que será la demanda a publicar
+   while [(indice < cantidad-a-publicar) and (not empty? demandas-demandante)] [
+      let indice-demanda random (length demandas-demandante) ;; Se define un número aleatorio que será la demanda a publicar
 
-      let demanda-temporal item indice-demanda demandas
+      let demanda-temporal item indice-demanda demandas-demandante
 
       ask pizarras [
         set demandas-pizarra lput demanda-temporal demandas-pizarra
       ]
 
-      set demandas remove-item indice-demanda demandas
+      set demandas-demandante remove-item indice-demanda demandas-demandante
       set indice indice + 1
   ]
 end
@@ -248,7 +248,7 @@ end
 
 to iteracion-intermediario-mercado-cerrado
   ask intermediarios [
-    if-else haber <= 0 [die] [
+    if-else haber-intermediario <= 0 [die] [
       if estado = 0  [intermediario-buscar-mercado-cerrado]
       if estado = 1  [intermediario-negociar-mercado-cerrado]
       if estado = 2  [intermediario-pedir-ayuda-mercado-cerrado]
@@ -267,20 +267,42 @@ to intermediario-buscar-mercado-cerrado ;;Estado 0
 
     ask pizarra idPizarra [set esAccesible false] ;; Reservamos la pizarra solo para un intermediario
     ;;Se adquieren las ofertas y demandas de la pizarra
+
     let lista-ofertas [ofertas-pizarra] of pizarra idPizarra
     let lista-demandas [demandas-pizarra] of pizarra idPizarra
     ;;Se ordenan según una heuristica escogida
-    set lista-ofertas ordenar-ofertas-precio-comision lista-ofertas
-    set lista-demandas ordenar-demandas-precios lista-demandas
-    ;;Se agarra una oferta y una demanda de las listas
 
-    ;; Se borran esas ofertas y demandas de la pizarra
+    if not(empty? lista-ofertas) [
+      set lista-ofertas ordenar-ofertas-precio-comision lista-ofertas
+      ;;Se escoge una oferta
+      let oferta-escogida item 0 lista-ofertas
+      ;;Se borra de la pizarra
+      ask pizarra idPizarra [
+        set ofertas-pizarra remove oferta-escogida ofertas-pizarra
+        ;;set demandas-pizarra remove-item demanda-escogida ofertas-pizarra
+      ]
+      ;;Se inserta la nueva oferta en todas mis ofertas
+      set ofertas-intermediario lput oferta-escogida ofertas-intermediario
+    ]
+    ;;To-do
+    if not(empty? lista-demandas) [
+      set lista-demandas ordenar-demandas-precios lista-demandas
+      ;;Se escoge una demanda
+      ;;let demanda-escogida item 0 lista-demandas
+      ;;Se borra de la pizarra
+    ]
 
-    ;;En caso de que hayan ofertas y demandas compatibles se pasa al estado de negociando
-
-    ;;En caso de que no, se pasa en el estado de pidiendo ayuda
-
-    ;;Si no tengo ni ofertas ni demandas el estado de buscando persiste
+    ;;Si las listas no son vacías entonces pasamos a otro estado, si no, seguimos buscando
+    if (not((empty? ofertas-intermediario)and(empty? demandas-intermediario)))[
+      if-else (buscar-coincidencias-ofertas-demandas ofertas-intermediario demandas-intermediario) [
+        ;;Si hay coincidencias se pasa a estado de negociando
+        set estado 1
+      ]
+      [
+        ;; Si no hay coincidencias se pasa a estado de pidiendo ayuda
+        set estado 2
+      ]
+    ]
 
     ask pizarra idPizarra [set esAccesible true] ;; Desbloqueamos la pizarra para que cualquier otro pueda agarrarla
   ]
@@ -321,6 +343,11 @@ end
 ;;métodos para Subestados del estado Pidiendo ayuda
 
 to ordenar-lista-conocidos
+  if not(empty? conocidos) [
+    set conocidos sort-with-dsc[l -> item 1 l] conocidos
+  ]
+  set subestado 1
+
 end
 
 to preguntar-intermediario-conocido
@@ -332,7 +359,44 @@ end
 ;;Métodos heurísticos para toma de decisiones
 
 to-report ordenar-ofertas-precio-comision [lst]
-  report []
+  ;;Para cada oferta en la lista creo una nueva solo con us id y precio*comision
+  let ofertas-precio-comision []
+  let oferta-temporal []
+
+  let i 0
+  let lista-size length lst
+
+  while [ i < lista-size] [
+
+    ;; Poner el id de la oferta
+    set oferta-temporal lput ( item 0 (item i lst) ) oferta-temporal
+    ;; Calcular la ganancia Precio * Comision
+    let ganancia ( ( item 1 (item i lst) )*( item 2 (item i lst) ) / 100 )
+    ;;Poner la ganancia
+    set oferta-temporal lput ganancia oferta-temporal
+    ;;Poner el indice donde se encontraba dicha lista, esto para eliminarla más adelante
+    set oferta-temporal lput i oferta-temporal
+    ;; Poner en la lista de ofertas
+    set ofertas-precio-comision lput oferta-temporal ofertas-precio-comision
+
+    set oferta-temporal []
+
+    set i (i + 1)
+  ]
+  set ofertas-precio-comision sort-with-dsc[l -> item 1 l] ofertas-precio-comision
+
+  let ofertas-ordenadas []
+  set i 0
+
+  while [ i < lista-size] [
+
+    set ofertas-ordenadas lput ( item ( item  2 (item i  ofertas-precio-comision ) ) lst ) ofertas-ordenadas
+
+    set i (i + 1)
+  ]
+
+
+  report ofertas-ordenadas
 end
 
 to-report ordenar-demandas-precios [lst]
@@ -343,6 +407,40 @@ end
 to-report decidir-hacer-trato-con-otro-agente
   report one-of [true false]
 end
+
+to-report buscar-coincidencias-ofertas-demandas [ ofertas demandas ]
+
+  let hayCoincidencia false
+
+  if not( (empty? ofertas) or (empty? demandas) ) [
+    let i 0
+    let j 0
+
+    let ofertas-size length ofertas
+    let demandas-size length demandas
+
+    let repetir true
+
+    while [ (i < ofertas-size ) or repetir] [
+      while[ j < demandas-size or repetir] [
+
+        let precio-oferta item 1 (item i ofertas)
+        let menor-precio-demanda item 1 (item i demandas)
+        let mayor-precio-demanda item 2 (item i demandas)
+
+        if ( (precio-oferta > menor-precio-demanda) and (precio-oferta < mayor-precio-demanda) ) [
+          set hayCoincidencia true
+          set repetir false
+        ]
+
+        set j (j + 1)
+      ]
+      set i (i + 1)
+    ]
+  ]
+  report hayCoincidencia
+end
+
 ;;Métodos para imprimir datos
 
 to imprimir-pizarra
@@ -355,20 +453,24 @@ end
 to imprimir-ofertas-oferentes
   ask oferentes [
     print word "Oferente: " who
-    print word "Ofertas: " ofertas
+    print word "Ofertas: " ofertas-oferente
   ]
 end
 
 to imprimir-demandas-demandantes
   ask demandantes [
     print word "Demandante: " who
-    print word "Demandas: " demandas
+    print word "Demandas: " demandas-demandante
   ]
 end
 
 ;;Métodos de ordenamiento de lista con una llave
-to-report sort-with [ key lst ] ;; Ordena una lista según una llave, se utiliza de esta forma sort-with [ l -> item n l ] my-list
+to-report sort-with-asc [ key lst ] ;; Ordena una lista según una llave, se utiliza de esta forma sort-with [ l -> item n l ] my-list
   report sort-by [ [a b] -> (runresult key a) < (runresult key b) ] lst
+end
+
+to-report sort-with-dsc [ key lst ] ;; Ordena una lista según una llave, se utiliza de esta forma sort-with [ l -> item n l ] my-list
+  report sort-by [ [a b] -> (runresult key a) > (runresult key b) ] lst
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -907,7 +1009,7 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 6.0.2
+NetLogo 6.0.3
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
