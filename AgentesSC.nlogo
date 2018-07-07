@@ -123,7 +123,7 @@ to set-oferente
     if-else esMercadoAbierto [
      ;; Por el momento nada
     ]
-    [
+    [;;Esta es la version del mercado cerrado
      set-todas-ofertas ;id, precio, comision, fecha-creacion, fecha-publicacion, validez
     ]
   ]
@@ -310,17 +310,31 @@ end
 
 ;;To-do
 to intermediario-negociar-mercado-cerrado ;;Estado 1
+
   ;;Se busca una coincidencia entre oferta y demanda
-
-  ;;Se actualiza el haber del intermediario (Haber+(Precio_Oferta*Comision))
-
-  ;;Se actualiza el haber del oferente (Haber+(Precio_Oferta -(Precio_Oferta*Comision)))
-
-  ;; Se actualiza el haber del demandante (Haber-Precio_Oferta)
-
-  ;;Se borran de mi lista de ofertas y demandas
-
-  ;;Se cambia el estado a buscando
+  if (not((empty? ofertas-intermediario)and(empty? demandas-intermediario)))[
+    if-else (buscar-coincidencias-ofertas-demandas ofertas-intermediario demandas-intermediario) [
+      let oferta-demanda (devolver-ofertas-demandas-con-concidencia ofertas-intermediario demandas-intermediario)
+      let precio-oferta item 1 (item 0 oferta-demanda)
+      let comision item 2 (item 0 oferta-demanda)
+      ;;Se actualiza el haber del intermediario (Haber+(Precio_Oferta*Comision))
+      set haber-intermediario haber-intermediario + (precio-oferta * comision)
+      ;;Se actualiza el haber del oferente (Haber+(Precio_Oferta -(Precio_Oferta*Comision)))
+      ask oferentes[
+        set haber-oferente haber-oferente + ( precio-oferta - (precio-oferta * comision))
+      ]
+      ;; Se actualiza el haber del demandante (Haber-Precio_Oferta)
+      ask demandantes[
+        set haber-demandante haber-demandante - precio-oferta
+      ]
+      ;;Se cambia el estado a buscando
+      set estado 0
+    ]
+    [
+      ;; Si no hay coincidencias se pasa a estado de pidiendo ayuda
+      set estado 2
+    ]
+  ]
 end
 
 ;;To-do
@@ -439,6 +453,49 @@ to-report buscar-coincidencias-ofertas-demandas [ ofertas demandas ]
     ]
   ]
   report hayCoincidencia
+end
+
+to-report devolver-ofertas-demandas-con-concidencia [ ofertas demandas ]
+
+  let hayCoincidencia false
+  let oferta-demanda []
+
+  if not( (empty? ofertas) or (empty? demandas) ) [
+    let i 0
+    let j 0
+
+    let ofertas-size length ofertas
+    let demandas-size length demandas
+
+    while [ (i < ofertas-size ) or not(hayCoincidencia)] [
+      while[ j < demandas-size or not(hayCoincidencia)] [
+
+        let precio-oferta item 1 (item i ofertas)
+        let menor-precio-demanda item 1 (item j demandas)
+        let mayor-precio-demanda item 2 (item j demandas)
+
+        if ( (precio-oferta > menor-precio-demanda) and (precio-oferta < mayor-precio-demanda) ) [
+          ;;Tomo la oferta escogida
+          let oferta-escogida item i ofertas
+          ;; Se quita la oferta de mi lista
+          set ofertas remove oferta-escogida ofertas
+          ;;Guardo la oferta para devolverla en la tupla
+          set oferta-demanda lput oferta-escogida oferta-demanda
+          ;; Tomo la demanda escogida
+          let demanda-escogida item i demandas
+          ;;Quito la demanda de la lista
+          set demandas remove oferta-escogida demandas
+          ;;Guardo la demanda para devolverla en la tupla
+          set oferta-demanda lput demanda-escogida oferta-demanda
+          ;;Me salgo del while
+          set hayCoincidencia true
+        ]
+        set j (j + 1)
+      ]
+      set i (i + 1)
+    ]
+  ]
+  report oferta-demanda
 end
 
 ;;Métodos para imprimir datos
