@@ -74,8 +74,8 @@ to go
       iteracion-demandante-mercado-cerrado
       iteracion-intermediario-mercado-cerrado
 
-      imprimir-ofertas-oferentes
-      imprimir-demandas-demandantes
+      ;imprimir-ofertas-oferentes
+      ;imprimir-demandas-demandantes
       imprimir-pizarra
 
       tick
@@ -259,6 +259,7 @@ end
 ;;Métodos de apoyo para las iteraciones
 ;;To-do
 to intermediario-buscar-mercado-cerrado ;;Estado 0
+  print (word "Intermediario " who " entro al estado 0")
 
   let idPizarra one-of [who] of pizarras
   let estaAccesible [esAccesible] of pizarra idPizarra
@@ -311,6 +312,8 @@ end
 ;;To-do
 to intermediario-negociar-mercado-cerrado ;;Estado 1
 
+  print (word "Intermediario " who " entro al estado 1")
+
   ;;Se busca una coincidencia entre oferta y demanda
   if (not((empty? ofertas-intermediario)and(empty? demandas-intermediario)))[
     if-else (buscar-coincidencias-ofertas-demandas ofertas-intermediario demandas-intermediario) [
@@ -328,6 +331,7 @@ to intermediario-negociar-mercado-cerrado ;;Estado 1
         set haber-demandante haber-demandante - precio-oferta
       ]
       ;;Se cambia el estado a buscando
+
       set estado 0
     ]
     [
@@ -340,13 +344,13 @@ end
 ;;To-do
 to intermediario-pedir-ayuda-mercado-cerrado ;;Estado 2
   ;;Esto tiene varios subestados, se tiene que hacer en varios ticks
-
+  print (word "Intermediario " who " entro al estado 2")
   if subestado = 0[ ;; Primera vez que el intermediario entra en este estado, se ordenará la lista de conocidos según una heurística y se le preguntará al primero si quiere hacer un trato
     ordenar-lista-conocidos
-    preguntar-intermediario-conocido
+    let respuesta-ayuda preguntar-intermediario-conocido
   ]
   if subestado = 1[ ;; Si algún conocido no estaba disponible para hacer un trato o lo declinó, se le pregunta al siguiente en la lista
-    preguntar-intermediario-conocido
+    let respuesta-ayuda preguntar-intermediario-conocido
   ]
   if subestado = 2[ ;; Si ya no tengo más conocidos a los cuales preguntarle, le preguntaré a un desconocido...
     preguntar-intermediario-desconocido
@@ -364,7 +368,8 @@ to ordenar-lista-conocidos
 
 end
 
-to preguntar-intermediario-conocido
+to-report preguntar-intermediario-conocido
+  report true
 end
 
 to preguntar-intermediario-desconocido
@@ -551,8 +556,8 @@ GRAPHICS-WINDOW
 16
 -16
 16
-0
-0
+1
+1
 1
 ticks
 30.0
