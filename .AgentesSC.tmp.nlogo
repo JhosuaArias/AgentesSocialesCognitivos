@@ -578,8 +578,7 @@ to-report sort-with-dsc [ key lst ] ;; Ordena una lista según una llave, se uti
 end
 
 to iteracion-prueba
-
-  imprimir-pizarra
+  i
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
