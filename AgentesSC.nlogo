@@ -159,7 +159,7 @@ to set-todas-ofertas
     let oferta-temporal []
      ;; id, precio, comision, fecha-creacion, fecha-publicacion, validez, id del oferente
     set oferta-temporal lput id-ofertas oferta-temporal ;;Pone el id de la oferta
-    set oferta-temporal lput random 101 oferta-temporal ;; Pone el precio de la oferta
+    set oferta-temporal lput ((random 101) * 100000) oferta-temporal ;; Pone el precio de la oferta
     set oferta-temporal lput ((random 3) + 1) oferta-temporal ;; Pone la comision de la oferta
     set oferta-temporal lput 1 oferta-temporal ;; Pone la fecha de creacion de la oferta
     set oferta-temporal lput random 10 oferta-temporal ;; Pone la validez, un numero random entre 0 - 9
@@ -177,8 +177,8 @@ to set-todas-demandas
     let demanda-temporal [];;Vacia el espacio temporal de ofertas
      ;; id, precio-menor, precio-mayor, fecha-creacion, fecha-publicacion, validez, id del demandante
     set demanda-temporal lput id-demandas demanda-temporal;;Pone el id de la demanda
-    set demanda-temporal lput random 99 demanda-temporal ;; Pone el precio menor de la demanda
-    set demanda-temporal lput (1 + (random (99 - item 1 demanda-temporal) + item 1 demanda-temporal)) demanda-temporal ;; Pone el precio mayor de la demanda
+    set demanda-temporal lput ((random 99) * 100000 ) demanda-temporal ;; Pone el precio menor de la demanda
+    set demanda-temporal lput (((random (99) * 100000 ) + item 1 demanda-temporal)) demanda-temporal ;; Pone el precio mayor de la demanda
     set demanda-temporal lput 1 demanda-temporal ;; Pone la fecha de creacion de la demanda
     set demanda-temporal lput random 10 demanda-temporal ;; Pone la validez, un numero random entre 0 - 9
     set demanda-temporal lput id-demandante demanda-temporal ;; El id del demandante que lo crea
@@ -846,7 +846,7 @@ cantidad-intermediarios
 cantidad-intermediarios
 2
 100
-3.0
+15.0
 1
 1
 NIL
@@ -1013,7 +1013,7 @@ probabilidad-negociar
 probabilidad-negociar
 0
 100
-100.0
+30.0
 1
 1
 NIL
@@ -1071,7 +1071,7 @@ true
 false
 "" ""
 PENS
-"Haber-Promedio" 1.0 0 -2674135 true "" "plot mean [haber-intermediario] of intermediarios"
+"Haber-Promedio" 1.0 0 -2674135 true "" "plot mean [haber-demandante] of demandantes"
 
 @#$#@#$#@
 ## WHAT IS IT?
