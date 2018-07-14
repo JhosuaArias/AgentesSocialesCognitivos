@@ -27,7 +27,6 @@ intermediarios-own
 
   subestado ;; Subestado cuando un intermediario está buscando ayuda;; primera vez = 0, conocidos = 1, desconocidos = 2
   indice-conocidos ;; Llevar un conteo de los conocidos a los cuales preguntarles si ocupan ayuda.
-  ganas-negociar ;; es 1 si quiere negociar, 0 si no quiere negociar
 ]
 
 pizarras-own
@@ -51,7 +50,7 @@ demandantes-own
   demandas-demandante ;; lista de demandas creadas
 ]
 
-;; Métodos default de cada iteración
+;; Métodos default de cada simulación
 to setup
   clear-all
   set-mundo
@@ -250,7 +249,6 @@ end
 
 to iteracion-intermediario-mercado-cerrado
   ask intermediarios [
-    decidir-si-negociar
     if-else haber-intermediario <= 0 [die] [
       if-else estado = 0  [intermediario-buscar-mercado-cerrado] [
         if-else estado = 1  [intermediario-negociar-mercado-cerrado][
@@ -288,7 +286,7 @@ to intermediario-buscar-mercado-cerrado ;;Estado 0
       ;;Se inserta la nueva oferta en todas mis ofertas
       set ofertas-intermediario lput oferta-escogida ofertas-intermediario
     ]
-    ;;To-do
+    ;;Ahora intentamos agarrar ofertas
     if not(empty? lista-demandas) [
       set lista-demandas ordenar-demandas-precios lista-demandas ofertas-intermediario
       ;;Se escoge una demanda
@@ -318,7 +316,7 @@ to intermediario-buscar-mercado-cerrado ;;Estado 0
   ]
 end
 
-;;To-do
+
 to intermediario-negociar-mercado-cerrado ;;Estado 1
 
   print (word "Intermediario " who " entro al estado 1")
@@ -326,7 +324,7 @@ to intermediario-negociar-mercado-cerrado ;;Estado 1
   ;;Se busca una coincidencia entre oferta y demanda
   if (not((empty? ofertas-intermediario)and(empty? demandas-intermediario)))[
     if-else (buscar-coincidencias-ofertas-demandas ofertas-intermediario demandas-intermediario) [
-      let oferta-demanda (devolver-ofertas-demandas-con-concidencia ofertas-intermediario demandas-intermediario)
+      let oferta-demanda (devolver-ofertas-demandas-con-coincidencia ofertas-intermediario demandas-intermediario)
       let precio-oferta item 1 (item 0 oferta-demanda)
       let comision ((item 2 (item 0 oferta-demanda)) / 100)
 
@@ -362,17 +360,23 @@ to intermediario-pedir-ayuda-mercado-cerrado ;;Estado 2
   ;;Esto tiene varios subestados, se tiene que hacer en varios ticks
   print (word "Intermediario " who " entro al estado 2")
   let respuesta-ayuda false
-  if subestado = 0[ ;; Primera vez que el intermediario entra en este estado, se ordenará la lista de conocidos según una heurística y se le preguntará al primero si quiere hacer un trato
+  if-else subestado = 0[ ;; Primera vez que el intermediario entra en este estado, se ordenará la lista de conocidos según una heurística y se le preguntará al primero si quiere hacer un trato
+    print (word "Intermediario " id-intermediario "está en subestado 0")
     ordenar-lista-conocidos
     set subestado 1
   ]
-  if subestado = 1[ ;; Si algún conocido no estaba disponible para hacer un trato o lo declinó, se le pregunta al siguiente en la lista
-    set respuesta-ayuda preguntar-intermediario-conocido
+  [
+    if-else subestado = 1[ ;; Si algún conocido no estaba disponible para hacer un trato o lo declinó, se le pregunta al siguiente en la lista
+      print (word "Intermediario " id-intermediario "está en subestado 1")
+      set respuesta-ayuda preguntar-intermediario-conocido
+    ]
+    [
+      if subestado = 2[ ;; Si ya no tengo más conocidos a los cuales preguntarle, le preguntaré a un desconocido...
+        print (word "Intermediario " id-intermediario "está en subestado 2")
+        set respuesta-ayuda preguntar-intermediario-desconocido
+      ]
+    ]
   ]
-  if subestado = 2[ ;; Si ya no tengo más conocidos a los cuales preguntarle, le preguntaré a un desconocido...
-    set respuesta-ayuda preguntar-intermediario-desconocido
-  ]
-
 end
 
 ;;métodos para Subestados del estado Pidiendo ayuda
@@ -381,47 +385,64 @@ to ordenar-lista-conocidos
   if not(empty? conocidos) [
     set conocidos sort-with-dsc[l -> item 1 l] conocidos
   ]
-  set subestado 1
   set indice-conocidos 0
 
 end
 
+;;Falta poner las experiencias que se han tenido con los que he interactuado
 to-report preguntar-intermediario-conocido
-  let respuesta false
-  if-else(indice-conocidos < (length conocidos))[
+  let respuesta [] ;;un par de [id,respuesta] 0: no hubo contacto, 1: hubo contacto y si quiere negociar, 2: hubo contacto y no quiere negociar
+  if-else(indice-conocidos < (length conocidos))[;;Tengo conocidos a los que les puedo preguntar si quieren negociar
     let conocido-temporal item indice-conocidos conocidos ;;saca el siguiente conocido de la lista
     set indice-conocidos (indice-conocidos + 1) ;;aumenta el indice de la lista de conocidos
-    ask intermediario (item 0 conocido-temporal) [
-      if estado = 2 [
-        if ganas-negociar = 1 [
-          set respuesta true
+    ;;Guardo mi id para darselo al otro agente para saber si quiere negociar conmigo
+    let id-intermediario-pregunta id-intermediario
+    let id-conocido (item 0 conocido-temporal)
+    ask intermediario id-conocido [
+      if-else estado = 2 [;;Está pidiendo ayuda tambien
+        if-else decidir-si-negociar[ ;; Quiere negociar
+          set respuesta (list id-conocido 1)
+        ]
+        [;;No quiere negociar
+           set respuesta (list id-conocido 2)
         ]
       ]
+      [ ;; No hubo respuesta
+        set respuesta (list id-conocido 0 )
+      ]
     ]
-  ][
+  ]
+  [;;Ya no tengo conocidos a los cuales preguntarles
     set subestado 2
   ]
   report respuesta
 end
 
+;;Aquí tambien falta poner experiencias con los que he interactuado
 to-report preguntar-intermediario-desconocido
-  let se-conocieron false
-  let respuesta false
+  let respuesta [] ;;un par de [id,respuesta] 0: no hubo contacto, 1: hubo contacto y si quiere negociar, 2: hubo contacto y no quiere negociar
   if-else not(empty? desconocidos) [
     let conocido-intermedio item (random length desconocidos) desconocidos
     ask intermediario conocido-intermedio[
-      if estado = 2 [
-        set se-conocieron true
-        if ganas-negociar = 1 [
-          set respuesta true
+      if-else estado = 2 [
+        ;;Se conocieron, hay que removerlo de los desconocidos
+        set desconocidos remove conocido-intermedio desconocidos
+        if-else decidir-si-negociar[;;Quiere negociar
+          set conocidos lput (list conocido-intermedio 1 [] ) conocidos
+           set respuesta (list conocido-intermedio 1)
+        ]
+        [;;No quiere negociar
+          set respuesta (list conocido-intermedio 2)
         ]
       ]
+      [;;no hubo contacto
+        set respuesta (list conocido-intermedio 0 )
+      ]
     ]
-    if se-conocieron [
-      set desconocidos remove conocido-intermedio desconocidos
-      set conocidos lput conocido-intermedio conocidos;;Pone el id de la demanda
-    ]
-  ][set estado 0]
+  ]
+  [
+    set estado 0
+  ]
   report respuesta
 end
 
@@ -492,8 +513,7 @@ to-report ordenar-demandas-precios [lst ofertas]
     ]
   ]
 
-  ;;En caso de que no haya ninguna que haya hecho match, se agarra la primera demanda
-
+  ;;En caso de que no haya ningún match, se agarran todas
   if not demanda-encontrada [
     set demandas-escogidas demandas-ordenadas-precio
   ]
@@ -534,7 +554,8 @@ to-report buscar-coincidencias-ofertas-demandas [ ofertas demandas ]
   report hayCoincidencia
 end
 
-to-report devolver-ofertas-demandas-con-concidencia [ ofertas demandas ]
+;;Solo devuelve un par oferta-demanda
+to-report devolver-ofertas-demandas-con-coincidencia [ ofertas demandas ]
 
   let hayCoincidencia false
   let oferta-demanda []
@@ -577,11 +598,47 @@ to-report devolver-ofertas-demandas-con-concidencia [ ofertas demandas ]
   report oferta-demanda
 end
 
-;; Metodo que se realiza cada tick para definir si el intermediario quiere negociar
-;; ganas-negociar es 1 si quiere negociar, 0 si no quiere negociar
-to decidir-si-negociar
+;;Heuristica mala para decidir si negociar o no con algún agente
+;;Es necesario hacer una heuristica que mande como parámetro el id de un agente y a partir de quien quiera negociar conmigo y las experiencias que he tenido con esa persona, decidir si negociar o no
+to-report decidir-si-negociar
   let numero-random random 101
-  if-else (numero-random < probabilidad-negociar)[set ganas-negociar 1][set ganas-negociar 0]
+  if-else (numero-random < probabilidad-negociar)[report true][report false]
+end
+
+;;Metodo que busca una coincidencia entre las ofertas y demandas de 2 intermediarios para que las puedan negociar
+to-report buscar-coincidencia-entre-intermediario [id-segundo-intermediario]
+
+  let mis-ofertas ofertas-intermediario
+  let mis-demandas demandas-intermediario
+  let mi-id id-intermediario
+
+  let coincidencia-oferta-demanda [];; Aquí se pondran las coincidencias
+  let ids-coincidencia [] ;;Aquí se pondran las conindicencias con ofertas y demandas con id respectivo [[id , oferta] [id , demanda]]
+
+  ask intermediario id-segundo-intermediario [
+    ;; Aquí se intenta buscar un match entre mis ofertas y las demandas del otro intermediario
+    set coincidencia-oferta-demanda devolver-ofertas-demandas-con-coincidencia mis-ofertas demandas-intermediario
+    ;;Si no se encontró un match, vamos a probar al reves
+    if-else (empty? coincidencia-oferta-demanda) [;;No hubo coincidencias
+      set coincidencia-oferta-demanda devolver-ofertas-demandas-con-coincidencia ofertas-intermediario mis-demandas
+
+      ;;Si tampoco hay coincidencias pues no podemos hacer trato
+      if-else (empty? coincidencia-oferta-demanda) [;;No hubo coindicencias tampoco, no hay nada que hacer
+        set ids-coincidencia []
+      ]
+      [;;Hubo coincidencias
+       ;; [[id-segundo [oferta]] [mi-id [demanda]]]
+        set ids-coincidencia (list (list id-segundo-intermediario (item 0 coincidencia-oferta-demanda) ) (list mi-id (item 1 coincidencia-oferta-demanda)))
+      ]
+    ]
+    [;;Hubo coincidencias
+     ;; [[mi-id [oferta]] [id-segundo [demanda]]]
+       set ids-coincidencia (list (list mi-id (item 0 coincidencia-oferta-demanda) ) (list id-segundo-intermediario (item 1 coincidencia-oferta-demanda)))
+    ]
+  ]
+
+  report ids-coincidencia
+
 end
 
 ;;Métodos para imprimir datos
@@ -675,7 +732,7 @@ SLIDER
 109
 cantidad-intermediarios
 cantidad-intermediarios
-0
+2
 100
 2.0
 1
@@ -726,7 +783,7 @@ haber-maximo-oferentes-demandantes
 haber-maximo-oferentes-demandantes
 0
 25
-25.0
+5.0
 1
 1
 M
@@ -752,7 +809,7 @@ haber-maximo-intermediarios
 haber-maximo-intermediarios
 0
 100
-1.0
+30.0
 1
 1
 %
