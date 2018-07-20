@@ -153,6 +153,7 @@ to set-pizarra
   ]
 end
 
+;;Metodo para crear nuevas ofertas
 to set-todas-ofertas
   let indice 0
   while [indice < numero-valores-a-crear] [
@@ -171,6 +172,8 @@ to set-todas-ofertas
   ]
   print word "Todas las ofertas: " ofertas-oferente
 end
+
+;;Metodo para crear nuevas demandas
 to set-todas-demandas
   let indice 0
   while [indice < numero-valores-a-crear] [
@@ -193,8 +196,8 @@ end
 to set-mundo ;; Método en caso de que se quiera implementar la parte gráfica de la simulación
 
 end
-;;Métodos para publicar ofertas y demandas
 
+;;Métodos para publicar ofertas y demandas
 to publicar-ofertas
 
     let cantidad-a-publicar random publicaciones-por-tick ;; Se crea un número aleatorio de la cantidad de ofertas a publicar
@@ -1074,41 +1077,60 @@ PENS
 "Haber-Promedio" 1.0 0 -2674135 true "" "plot mean [haber-demandante] of demandantes"
 
 @#$#@#$#@
-## WHAT IS IT?
+## QUE ES EL MODELO?
 
-(a general understanding of what the model is trying to show or explain)
+En el mercado de intermediación participan tres clases de agente: oferentes, que ofrecen valores a la venta, demandantes, que buscan valores para comprar, e intermediarios, que negocian una comisión de intermediación por realizar la transacción de compra-venta asociada a una oferta y una demanda que coinciden.
 
-## HOW IT WORKS
+Clases y cantidad de agentes: Los agentes oferentes y demandantes son representados por
+la clase cliente, y esta es representada por un único agente. Por otro lado, en cada simulación se crean N agentes intermediarios. El número N es un parámetro de la simulación, que puede ser implementado mediante un slider en NetLogo.
 
-(what rules the agents use to create the overall behavior of the model)
+Entorno de la simulación: El espacio de transacción de valores en el mercado es representado por una pizarra de acceso publico no concurrente, que tiene dos posible estados: accesible y bloqueada, que solo afectan el acceso de los agentes intermediarios. Las acciones del agente cliente son independientes del estado de la pizarra.
 
-## HOW TO USE IT
+Acceso no concurrente de intermediarios: Para que cualquier agente intermediario acceda
+a la pizarra, su estado debe ser accesible. En ese caso, el agente debe cambiar el estado de la pizarra a bloqueada, realizar una acción sobre la pizarra, y volver a poner su estado en accesible. El propósito de limitar las acciones de los agentes intermediarios sobre la pizarra a solo una es evitar el "secuestro" de la pizarra por un solo intermediario.
 
-(how to use the model, including a description of each of the items in the Interface tab)
+Acciones del agente cliente: El agente cliente solamente accede a la pizarra para realizar una de dos posible acciones: publicar ofertas o publicar demandas.
 
-## THINGS TO NOTICE
+Acciones de los intermediarios: Los intermediarios acceden a la pizarra para buscar coincidencias entre ofertas y demandas; su propósito es realizar la transacción de compra-venta representada en cada coincidencia encontrada, y cobrar la comisión correspondiente. Los agentes intermediarios pueden estar en uno de los estados siguientes:
 
-(suggested things for the user to notice while running the model)
+-Buscando
+-Negociando
+-Pidiendo ayuda
 
-## THINGS TO TRY
+## COMO FUNCIONA
 
-(suggested things for the user to try to do (move sliders, switches, etc.) with the model)
+El modelo genera valores (por el momento aleatorios) de ofertas y demandas y los publica en la pizarra con la tasa de velocidad que le definamos al principio, posteriormente los agentes intermediarios pasan uno por uno a la pizarra a buscar ofertas y demandas que hagan match, si encuentran una pareja, entonces toman ambos valores de la pizarra y cambian al estado negociando para concretar la transaccion y "cerrar el trato", si no encuentran una pareja que calce, entonces toman alguna oferta o demanda y pasan al estado de Pidiendo Ayuda para ver si algun otro intermediario quiere hacer negocios y compartir la comisión 50/50
 
-## EXTENDING THE MODEL
+## COMO SE UTILIZA
 
-(suggested things to add or change in the Code tab to make the model more complicated, detailed, accurate, etc.)
+Se puede modificar el haber inicial tanto de los intermediarios como de los oferentes asi como la cantidad de los intermediarios. Tambien se puede modificar la cantidad de valores (ofertas y demandas) que se crean en el inicio de la simulación, asi como la cantidad que se publican en la pizarra en cada Tick.
 
-## NETLOGO FEATURES
+Las opciones de mercado abierto, asi como variar la cantidad de oferentes y demandantes no estan 100% implementadas por lo que variar estos valores puede provocar un mal funcionamiento del sistema o no habrian cambios significativos en los resultados de la simulación.
 
-(interesting or unusual features of NetLogo that the model uses, particularly in the Code tab; or where workarounds were needed for missing features)
+## EXTENDIENDO EL MODELO
 
-## RELATED MODELS
+El modelo fue diseñado de manera modular para que pueda ser extendido de manera sencilla agregando diferentes heuristica a las tomas de desiciones de los intermediarios. 
 
-(models in the NetLogo Models Library and elsewhere which are of related interest)
+Se puede implementar la versión de un mercado abierto.
 
-## CREDITS AND REFERENCES
+Se puede implementar un sistema de “egresos externos” los intermediarios tienen que pagar otras cosas ajenas al mercado. Esto puede afectar varios valores cuando uno esté sin dinero.
 
-(a reference to the model's URL on the web if it has one, as well as any other necessary credits, citations, and links)
+La Teoría de la Mente no está totalmente implementada. Falta ponerle a los intermediarios sus experiencias pasadas con otros intermediarios. Y decidir a partir de estas experiencias si negociar con un intermediario específico o no en un futuro.
+
+Actualmente la simulación solo cuenta con el factor confianza para la toma de decisiones. Es importante ampliar esto a una lista más variada, con factores como: Deseos, metas, egoísmo, obligaciones, creencias, intenciones, etc.
+
+Los factores para cada agente no siempre tienen el mismo peso, esto es, para un agente es más importante obtener un bien individual (egoísmo)  antes que forjar alianzas con otras personas (confianza). Y para otro agente lo contrario.
+
+Actualmente todos los agentes se rigen por la misma “técnica” para comprar valores en el mercado, puede ser útil implementar más formas.
+
+La única información que pueden compartir los agentes entre ellos son ofertas y demandas. Sería útil poder compartir otro tipo de información, por ejemplo, que un agente le recomiende a otro utilizar una técnica específica para comprar valores en el mercado. El agente receptor puede decidir si seguir tal consejo o no, según la ToM y experiencias anteriores con el agente emisor.
+
+Implementar un algoritmo para realizar inferencias, el cual permita ver si una técnica sirve o no, si esta fue recomendada por otro agente, el algoritmo puede cambiar el nivel de confianza que se le tiene.
+
+
+## CREDITOS Y AGRADECIMIENTOS
+
+Nuestros agradecimientos al Dr. Álvaro de la Ossa por ayudarnos a diseñar un modelo para la implementación de la  simulación.
 @#$#@#$#@
 default
 true
