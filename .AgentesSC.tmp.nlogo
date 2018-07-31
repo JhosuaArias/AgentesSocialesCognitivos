@@ -370,12 +370,12 @@ to intermediario-pedir-ayuda-mercado-cerrado ;;Estado 2
   ]
   [
     if-else subestado = 1[ ;; Si algún conocido no estaba disponible para hacer un trato o lo declinó, se le pregunta al siguiente en la lista
-      print (word "Intermediario " id-intermediario " está en subestado 1")
+      print (word "Intermediario " id-intermediario "está en subestado 1")
       set respuesta-ayuda preguntar-intermediario-conocido
     ]
     [
       if subestado = 2[ ;; Si ya no tengo más conocidos a los cuales preguntarle, le preguntaré a un desconocido...
-        print (word "Intermediario " id-intermediario " está en subestado 2")
+        print (word "Intermediario " id-intermediario "está en subestado 2")
         set respuesta-ayuda preguntar-intermediario-desconocido
       ]
     ]
